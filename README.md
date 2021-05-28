@@ -11,6 +11,8 @@ Maturski rad u obliku (~Atari) Pong igrice.
 
 LShift - Ubrzava kretanje reketa
 
-F11 - Fullscreen 
+F11 - Fullscreen
+
+Spacebar - Započinje igru
 
 Esc - Izlaz iz igre
