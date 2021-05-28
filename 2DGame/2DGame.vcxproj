@@ -74,8 +74,8 @@
     <LibraryPath>C:\Users\slavk\Desktop\2DGame\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\Users\slavk\Desktop\2DGame\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\slavk\Desktop\2DGame\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\slavk\source\repos\2DGame\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\slavk\source\repos\2DGame\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
