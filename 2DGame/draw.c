@@ -1,23 +1,27 @@
 #include "types.h"
+#include "draw.h"
+
+SDL_Color White = { 255,255,255 };
 
 int Timer_size;
 char *Timer;
-Uint32 ElapsedTime;
-SDL_Surface *timer_surface;
 
-void draw_text(char* Message, TTF_Font* Font, SDL_Color Color) { //TESTING
+void draw_TitleText() {
 	
 	SDL_Rect dest;
 
-	dest.x = (screen->w / 2) - (title->w / 2);
-	dest.y = (screen->h / 2) - (title->h / 2) - 100;
-	dest.w = title->w;
-	dest.h = title->h;
+	dest.x = (screen->w / 2) - (MainMenu_Pong->w / 2);
+	dest.y = (screen->h / 2) - 100;
+	dest.w = screen->w;
+	dest.h = screen->h;
 
 	SDL_BlitSurface(MainMenu_Pong, NULL, screen, &dest);
 }
 
-void draw_timer() { //TESTING
+void draw_timer(Uint32 *GameStartTime) {
+
+	Uint32 ElapsedTime;
+	SDL_Surface *timer_surface;
 
 	SDL_Rect dest;
 
@@ -26,7 +30,7 @@ void draw_timer() { //TESTING
 	dest.w = 48;
 	dest.h = 48;
 
-	ElapsedTime = (SDL_GetTicks() - GameStartTime) / 1000;
+	ElapsedTime = (SDL_GetTicks() - *GameStartTime) / 1000;
 
 	snprintf(Timer, Timer_size, "%.2d:%.2d", (ElapsedTime / 60) % 60, ElapsedTime % 60);
 
@@ -35,6 +39,12 @@ void draw_timer() { //TESTING
 	SDL_BlitSurface(timer_surface, NULL, screen, &dest);
 
 	SDL_FreeSurface(timer_surface);
+}
+
+void draw_backround() {
+	//draw background
+	SDL_RenderClear(renderer);
+	SDL_FillRect(screen, NULL, 0x000000ff);
 }
 
 void draw_game_over(int p) {
@@ -78,36 +88,20 @@ void draw_game_over(int p) {
 }
 
 void draw_menu() {
-
-/*	SDL_Rect src;
-	SDL_Rect dest;
-
-	src.x = 0;
-	src.y = 0;
-	src.w = title->w;
-	src.h = title->h;
-
-	dest.x = (screen->w / 2) - (src.w / 2);
-	dest.y = (screen->h / 2) - (src.h / 2);
-	dest.w = title->w;
-	dest.h = title->h;
-
-	SDL_BlitSurface(title, &src, screen, &dest);*/
-
+	draw_TitleText();
 }
 
 void draw_net() {
 
+	int i;
 	SDL_Rect net;
 
 	net.x = screen->w / 2;
-	net.y = 45; //20
+	net.y = 45;
 	net.w = 1;
 	net.h = 10;
 
 	//draw the net
-	int i;
-
 	for (i = 0; i < 29; i++) {
 
 		if (SDL_FillRect(screen, &net, 0xffffffff) != 0) {
@@ -134,8 +128,8 @@ void draw_ball() {
 
 void draw_paddle() {
 
-	SDL_Rect src;
 	int i;
+	SDL_Rect src;
 
 	for (i = 0; i < 2; i++) {
 
@@ -192,4 +186,19 @@ void draw_player_1_score() {
 	}
 
 	SDL_BlitSurface(numbermap, &src, screen, &dest);
+}
+
+void draw_all(Uint32 *GameStartTime) {
+	//draw timer 
+	draw_timer(GameStartTime);
+	//draw net
+	draw_net();
+	//draw paddles
+	draw_paddle();
+	//Put the ball on the screen.
+	draw_ball();
+	//draw the score
+	draw_player_0_score();
+	//draw the score
+	draw_player_1_score();
 }

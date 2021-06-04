@@ -30,6 +30,12 @@
     <ClCompile Include="audio.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="scrshot.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="userinput.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="types.h">
@@ -48,6 +54,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="audio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="scrshot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="userinput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

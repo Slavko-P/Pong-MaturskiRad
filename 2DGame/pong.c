@@ -2,42 +2,39 @@
 #include "init.h"
 #include "move.h"
 #include "draw.h"
-#include "audio.h"
+#include "userinput.h"
+
+#define SCREEN_WIDTH 640	//window height
+#define SCREEN_HEIGHT 480	//window width
 
 int score[] = { 0,0 };
 int width, height;
 
-ball_t ball;
-paddle_t paddle[2];
+int g_Delay;
+int g_Last_Loss = RIGHT;
+int g_Paused = 0;
+int g_quit = 0;
+int g_state = MAIN_MENU;
 
-SDL_Window *window = NULL;	
+paddle_t paddle[2];
+ball_t ball;
+
+SDL_Window *window;	
 SDL_Renderer *renderer;		
 SDL_Event events;
 
 SDL_Surface *screen;
-SDL_Surface *title;
 SDL_Surface *numbermap;
 SDL_Surface *end;
 
 SDL_Texture *screen_texture;
 
-SDL_Color White = { 255, 255, 255 };
 TTF_Font *Font1, *Font2;
 SDL_Surface* surfaceMessage;
-
-Uint32 GameStartTime = -1;
-
-char *catStr(char *str1, char *str2) {
-	int BufferSize = strlen(str1) + strlen(str2) + sizeof(char)*2; //space + term
-	char *NewString = (char *)malloc(BufferSize);
-	snprintf(NewString, BufferSize, "%s %s", str1, str2);
-	return NewString;
-}
 
 int check_score() {
 
 	int i;
-
 	//loop through player scores
 	for (i = 0; i < 2; i++) {
 
@@ -45,8 +42,8 @@ int check_score() {
 		if (score[i] == 10) {
 
 			//reset scores
-			score[0] = 0;
-			score[1] = 0;
+			score[LEFT] = 0;
+			score[RIGHT] = 0;
 
 			//return 1 if player 1 score @ limit
 			if (i == 0) {
@@ -58,137 +55,74 @@ int check_score() {
 			}
 		}
 	}
-
 	//return 0 if no one has reached a score of 10 yet
 	return 0;
 }
 
-//if return value is 1 collision occured. if return is 0, no collision.
-int check_collision(ball_t a, paddle_t b) {
-
-	int left_a, left_b;
-	int right_a, right_b;
-	int top_a, top_b;
-	int bottom_a, bottom_b;
-
-	left_a = a.x;
-	right_a = a.x + a.w;
-	top_a = a.y;
-	bottom_a = a.y + a.h;
-
-	left_b = b.x;
-	right_b = b.x + b.w;
-	top_b = b.y;
-	bottom_b = b.y + b.h;
-
-
-	if (left_a > right_b) {
-		return 0;
-	}
-
-	if (right_a < left_b) {
-		return 0;
-	}
-
-	if (top_a > bottom_b) {
-		return 0;
-	}
-
-	if (bottom_a < top_b) {
-		return 0;
-	}
-
-	return 1;
-}
-
 int main(int argc, char *args[]) {
-	
+
+	ball_t ball;
+	paddle_t paddle[2];
+
+	Uint32 GameStartTime = -1;
+
 	//SDL Window setup
-	if (init(SCREEN_WIDTH, SCREEN_HEIGHT, argc, args) == 1) {
+	if (init(SCREEN_WIDTH, SCREEN_HEIGHT, argc, args)) {
 		return 0;
 	}
-
-	SDL_GetWindowSize(window, &width, &height);
 
 	int sleep = 0;
-	int quit = 0;
-	int state = 0;
 	int r = 0;
 	Uint32 next_game_tick = SDL_GetTicks();
 
 	// Initialize the ball position data. 
-	init_game();
+	init_game(&ball, &paddle);
 
 	//render loop
-	while (quit == 0) {
+	while (!g_quit) {
 
-		if (state == 1 && GameStartTime == -1) {
-			GameStartTime = SDL_GetTicks(); //<--testing, not final
-		}
+		while (g_Paused) {
+			CheckMiscEvents();
+			next_game_tick = SDL_GetTicks();
+			g_Delay = 0;
+			SDL_Delay(1);
+		} 
+		
+		if (g_Delay > 0) {
+			SDL_Delay(g_Delay);
+			next_game_tick = SDL_GetTicks();
+			g_Delay = 0;
+		} 
+		else {
+			next_game_tick += 1000 / 60;
+			sleep = next_game_tick - SDL_GetTicks();
+			if (sleep >= 0) {
+				SDL_Delay(sleep);
+			}
+		} 
 
-		//check for new events every frame
 		SDL_PumpEvents();
+		//Provera za 'X' dugme na prozor, F2, F11, Esc, Space
+		CheckMiscEvents();
 
-		//check for x press event
-		while (SDL_PollEvent(&events)) {
-			if (events.type == SDL_QUIT) quit = 1;
-		}
-
-		const Uint8 *keystate = SDL_GetKeyboardState(NULL);
-
-		if (keystate[SDL_SCANCODE_ESCAPE]) {
-			quit = 1;
-		}
-
-		if (keystate[SDL_SCANCODE_LSHIFT] && keystate[SDL_SCANCODE_DOWN]) {
-			move_paddle(-2);
-		}
-		else if (keystate[SDL_SCANCODE_DOWN]) {
-			move_paddle(-1);
-		}
-		
-		if (keystate[SDL_SCANCODE_LSHIFT] && keystate[SDL_SCANCODE_UP]) {
-			move_paddle(2);
-		}
-		else if (keystate[SDL_SCANCODE_UP]) {
-			move_paddle(1);
-		}
-		
-		if (keystate[SDL_SCANCODE_F11]) {
-			if (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN_DESKTOP) {
-				SDL_SetWindowFullscreen(window, SDL_WINDOW_MINIMIZED);
-			}
-			else if (SDL_GetWindowFlags(window) & SDL_WINDOW_SHOWN) {
-				SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-			}
-			SDL_Delay(500);
-		}
-
-		//draw background
-		SDL_RenderClear(renderer);
-		SDL_FillRect(screen, NULL, 0x000000ff);
+		draw_backround();
 
 		//display main menu
-		if (state == 0) {
-
-			if (keystate[SDL_SCANCODE_SPACE]) {
-				state = 1;
+		if (g_state == MAIN_MENU) {
+			if (CheckKeyState(SDL_SCANCODE_SPACE)) {
+				g_state = IN_GAME;
 			}
-			
-			draw_text(Font1, "test", White);
+			if (CheckKeyState(SDL_SCANCODE_M)) {
+				g_state = MULTIPLAYER;
+			}
 
 			//draw menu 
 			draw_menu();
-
-			//display gameover
 		}
-		else if (state == 2) {
+		else if (g_state == GAME_OVER) { //display gameover
 
-			if (keystate[SDL_SCANCODE_SPACE]) {
-				state = 0;
-				//delay for a little bit so the space bar press dosnt get triggered twice
-				//while the main menu is showing
-				SDL_Delay(500);
+			if (CheckKeyState(SDL_SCANCODE_SPACE)) {
+				g_state = MAIN_MENU;
 			}
 
 			if (r == 1) {
@@ -198,43 +132,38 @@ int main(int argc, char *args[]) {
 			else {
 				//display gameover
 				draw_game_over(r);
+			}	
+		}
+		else if (g_state == IN_GAME) { //display the game
+
+			if (GameStartTime == -1) {
+				GameStartTime = SDL_GetTicks();
 			}
 
-			//display the game
-		}
-		else if (state == 1) {
+			Player2_GetArrowsKeystate();
 
 			//check score
 			r = check_score();
 
 			//if either player wins, change to game over state
-			if (r == 1) {
-				state = 2;
-			}
-			else if (r == 2) {
-				state = 2;
+			if (r == 1 || r == 2) {
+				g_state = GAME_OVER;
 			}
 
-			//draw_text("Pong", Font1, White);
-			//draw_text("Press space to begin", Font, White);
-			//paddle ai movement
-			move_paddle_ai();
-			//* Move the balls for the next frame. 
+			//Move objects
+			move_all(ball, paddle);
+			//Draw object
+			draw_all(&GameStartTime, ball, paddle);
+		}
+		else if (g_state = MULTIPLAYER) {
+			if (GameStartTime == -1) {
+				GameStartTime = SDL_GetTicks();
+			}
+			
+			MultiPlayer_GetArrowsKeystate();
 			move_ball();
-
-			//draw timer (testing)
-			draw_timer();
-
-			//draw net
-			draw_net();
-			//draw paddles
-			draw_paddle();
-			//* Put the ball on the screen.
-			draw_ball();
-			//draw the score
-			draw_player_0_score();
-			//draw the score
-			draw_player_1_score();
+			//Draw object
+			draw_all(&GameStartTime, ball, paddle);
 		}
 
 		SDL_UpdateTexture(screen_texture, NULL, screen->pixels, screen->w * sizeof(Uint32));
@@ -242,32 +171,23 @@ int main(int argc, char *args[]) {
 
 		//draw to the display
 		SDL_RenderPresent(renderer);
-
-		//time it takes to render  frame in milliseconds
-		next_game_tick += 1000 / 60;
-		sleep = next_game_tick - SDL_GetTicks();
-
-		if (sleep >= 0) {
-			SDL_Delay(sleep);
-		}
 	}
 
 	//free loaded images
 	SDL_FreeSurface(screen);
-	SDL_FreeSurface(title);
 	SDL_FreeSurface(numbermap);
 	SDL_FreeSurface(end);
 	SDL_FreeSurface(surfaceMessage); //<-Testing
 
 	//free renderer and all textures used with it
 	SDL_DestroyRenderer(renderer);
-
 	//Destroy window 
 	SDL_DestroyWindow(window);
 
 	//Quit TTF subsystems
 	TTF_Quit();
-
+	//Quit Mix sybsystems
+	Mix_Quit();
 	//Quit SDL subsystems 
 	SDL_Quit();
 

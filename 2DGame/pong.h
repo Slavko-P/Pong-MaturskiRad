@@ -7,6 +7,4 @@ char *catStr(char *str1, char *str2);
 
 int check_score();
 
-int check_collision(ball_t a, paddle_t b);
-
 #endif
