@@ -16,3 +16,5 @@ F11 - Fullscreen
 Spacebar - Započinje igru
 
 Esc - Izlaz iz igre
+
+M - Multiplayer
